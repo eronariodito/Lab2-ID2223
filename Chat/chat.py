@@ -116,8 +116,10 @@ current_pretext = ''
 def set_pretext(pretext):
     global current_pretext
     current_pretext = pretext
+    return f"{pretext}"
 
 def async_process_chatbot(message, history):
+    global current_pretext
     message = message + current_pretext
     eos_token = tokenizer.eos_token
     stop_on_tokens = StopOnTokens([eos_token,])
