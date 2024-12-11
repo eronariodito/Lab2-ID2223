@@ -5,7 +5,80 @@ os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 MODEL_NAME = "unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit"
 
-# ... [Previous installation code remains the same] ...
+print("Installing packages for 🦥 Unsloth Studio ... Please wait 5 minutes ...")
+
+install_first = [
+    "pip", "install",
+    "unsloth"
+]
+
+install_first = subprocess.Popen(install_first)
+install_first.wait()
+
+uninstall_install_first = [
+    "pip", "uninstall", "-y",
+    "unsloth"
+]
+
+uninstall_install_first = subprocess.Popen(uninstall_install_first)
+uninstall_install_first.wait()
+
+install_second = [
+    "pip", "install",
+    "gradio==4.44.1",
+    "unsloth[colab-new]@git+https://github.com/unslothai/unsloth.git",
+]
+install_second = subprocess.Popen(install_second)
+install_second.wait()
+
+upgrade_huggingface_hub = [
+    "pip", "install", 
+    "huggingface-hub",
+    "-U",
+    "--force-reinstall"
+]
+
+upgrade_huggingface_hub = subprocess.Popen(upgrade_huggingface_hub)
+upgrade_huggingface_hub.wait()
+
+
+from huggingface_hub import snapshot_download
+import warnings
+warnings.filterwarnings(action = "ignore", category = UserWarning,    module = "torch")
+warnings.filterwarnings(action = "ignore", category = UserWarning,    module = "huggingface_hub")
+warnings.filterwarnings(action = "ignore", category = FutureWarning,  module = "huggingface_hub")
+warnings.filterwarnings(action = "ignore", category = RuntimeWarning, module = "subprocess")
+warnings.filterwarnings(action = "ignore", category = UserWarning,    module = "transformers")
+warnings.filterwarnings(action = "ignore", category = FutureWarning,  module = "accelerate")
+warnings.filterwarnings(action = "ignore", category = RuntimeWarning, module = "multiprocessing")
+warnings.filterwarnings(action = "ignore", category = RuntimeWarning, module = "multiprocess")
+
+from huggingface_hub.utils import disable_progress_bars
+disable_progress_bars()
+snapshot_download(repo_id = MODEL_NAME, repo_type = "model")
+
+clear_output()
+
+
+from contextlib import redirect_stdout
+import io
+import logging
+logging.getLogger("transformers.utils.hub").setLevel(logging.CRITICAL+1)
+
+print("Loading model ... Please wait 1 more minute! ...")
+
+with redirect_stdout(io.StringIO()):
+    from unsloth import FastLanguageModel
+    import torch
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name = MODEL_NAME,
+        max_seq_length = None,
+        dtype = None,
+        load_in_4bit = True,
+    )
+    FastLanguageModel.for_inference(model)
+pass
+clear_output()
 
 import gradio
 gradio.strings.en["SHARE_LINK_DISPLAY"] = ""
