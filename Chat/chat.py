@@ -203,7 +203,7 @@ with gradio.Blocks(theme=studio_theme) as scene:
     
     professional_pretext_btn.click(
         fn=set_pretext("I need you to act professional when responding to the chat or instruction below /n"), 
-        inputs=gr.State("Professional"),
+        inputs=gradio.State("Professional"),
         outputs=pretext_status
     )
     
