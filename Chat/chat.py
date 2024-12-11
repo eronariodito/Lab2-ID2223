@@ -116,7 +116,16 @@ current_pretext = ''
 def set_pretext(pretext):
     global current_pretext
     current_pretext = pretext
-    return f"{pretext}"
+    
+    match pretext:
+        case "I need you to act professional when responding to the chat or instruction below /n":
+            return f"Professional"
+        case "I need you to act sad when responding to the chat or instruction below /n":
+            return f"Sad"
+        case "I need you to act angry when responding to the chat or instruction below /n":
+            return f"Angry"
+        
+    return f""
 
 def async_process_chatbot(message, history):
     global current_pretext
