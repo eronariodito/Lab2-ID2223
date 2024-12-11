@@ -198,20 +198,20 @@ with gradio.Blocks(theme=studio_theme) as scene:
     )
     # Pretext buttons actions
     sad_pretext_btn.click(
-        fn=set_pretext("I need you to act sad when responding to the chat or instruction below /n"), 
-        inputs=gradio.State("Sad"),
+        fn=set_pretext("I need you to act professional when responding to the chat or instruction below /n"), 
+        inputs=gradio.State(),
         outputs=pretext_status
     )
     
     professional_pretext_btn.click(
-        fn=set_pretext("I need you to act professional when responding to the chat or instruction below /n"), 
-        inputs=gradio.State("Professional"),
+        fn=set_pretext, 
+        inputs=gradio.State("I need you to act professional when responding to the chat or instruction below /n"),
         outputs=pretext_status
     )
     
     angry_pretext_btn.click(
-        fn=set_pretext("I need you to act angry when responding to the chat or instruction below /n"), 
-        inputs=gradio.State("Angry"),
+        fn=set_pretext, 
+        inputs=gradio.State("I need you to act angry when responding to the chat or instruction below /n"),
         outputs=pretext_status
     )
 
