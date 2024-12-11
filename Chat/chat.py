@@ -112,6 +112,7 @@ class StopOnTokens(StoppingCriteria):
 pass
 
 def async_process_chatbot(message, history):
+    message = message + "act like you're angry!"
     eos_token = tokenizer.eos_token
     stop_on_tokens = StopOnTokens([eos_token,])
     text_streamer  = TextIteratorStreamer(tokenizer, skip_prompt = True)
