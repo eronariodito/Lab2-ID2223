@@ -119,13 +119,13 @@ def set_pretext(pretext):
     
     match pretext:
         case "I need you to act professional when responding to the chat or instruction below /n":
-            return f"Professional"
+            return "Professional"
         case "I need you to act sad when responding to the chat or instruction below /n":
-            return f"Sad"
+            return "Sad"
         case "I need you to act angry when responding to the chat or instruction below /n":
-            return f"Angry"
+            return "Angry"
         
-    return f""
+    return ""
 
 def async_process_chatbot(message, history):
     global current_pretext
@@ -207,7 +207,7 @@ with gradio.Blocks(theme=studio_theme) as scene:
     )
     # Pretext buttons actions
     sad_pretext_btn.click(
-        fn=set_pretext("I need you to act professional when responding to the chat or instruction below /n"), 
+        fn=set_pretext("I need you to act sad when responding to the chat or instruction below /n"), 
         inputs=gradio.State(),
         outputs=pretext_status
     )
