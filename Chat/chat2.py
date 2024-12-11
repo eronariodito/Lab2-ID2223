@@ -79,9 +79,7 @@ with redirect_stdout(io.StringIO()):
     FastLanguageModel.for_inference(model)
 pass
 clear_output()
-
-import gradio
-gradio.strings.en["SHARE_LINK_DISPLAY"] = ""
+import gradio as gr
 from transformers import TextIteratorStreamer, StoppingCriteria, StoppingCriteriaList
 from threading import Thread
 
@@ -95,16 +93,21 @@ class StopOnTokens(StoppingCriteria):
     pass
 pass
 
-def modify_message_with_pretext(message, pretext):
+# Global variable to store the current pretext
+current_pretext = ""
+
+def modify_message_with_pretext(message):
     """
     Prepend a pretext to the user's message
     """
-    return f"{pretext} {message}"
+    global current_pretext
+    if current_pretext:
+        return f"{current_pretext} {message}"
+    return message
 
-def async_process_chatbot(message, history, pretext=""):
-    # Add pretext to the message if provided
-    if pretext:
-        message = modify_message_with_pretext(message, pretext)
+def async_process_chatbot(message, history):
+    # Modify message with pretext if exists
+    message = modify_message_with_pretext(message)
     
     eos_token = tokenizer.eos_token
     stop_on_tokens = StopOnTokens([eos_token,])
@@ -148,69 +151,67 @@ def async_process_chatbot(message, history, pretext=""):
     pass
 pass
 
-studio_theme = gradio.themes.Soft(
+studio_theme = gr.themes.Soft(
     primary_hue = "teal",
 )
 
-# Define pretext buttons
-def create_pretext_button(pretext):
-    return gradio.Button(value=f"Pretext: {pretext}")
+# Pretext selection function
+def set_pretext(pretext):
+    global current_pretext
+    current_pretext = pretext
+    return f"Pretext set: {pretext}"
 
-# Create three different pretext buttons
-code_pretext_btn = create_pretext_button("Act as a Python code expert")
-professional_pretext_btn = create_pretext_button("Respond professionally")
-creative_pretext_btn = create_pretext_button("Be highly creative")
-
-scene = gradio.ChatInterface(
-    async_process_chatbot,
-    chatbot = gradio.Chatbot(
+# Create the interface with more explicit components
+with gr.Blocks(theme=studio_theme) as scene:
+    # Chatbot component
+    chatbot = gr.Chatbot(
         height = 325,
         label = "Unsloth Studio Chat",
-    ),
-    textbox = gradio.Textbox(
+    )
+    
+    # Textbox for input
+    msg = gr.Textbox(
         placeholder = "Message Unsloth Chat",
         container = False,
-    ),
-    # Add the pretext buttons to the interface
-    additional_inputs = [
-        code_pretext_btn,
-        professional_pretext_btn,
-        creative_pretext_btn,
-    ],
-    title = None,
-    theme = studio_theme,
-    examples = None,
-    cache_examples = False,
-    retry_btn = None,
-    undo_btn = "Remove Previous Message",
-    clear_btn = "Restart Entire Chat",
-)
+    )
+    
+    # Buttons for different pretexts
+    with gr.Row():
+        code_pretext_btn = gr.Button("Pretext: Act as a Python code expert")
+        professional_pretext_btn = gr.Button("Pretext: Respond professionally")
+        creative_pretext_btn = gr.Button("Pretext: Be highly creative")
+    
+    # Status textbox to show current pretext
+    pretext_status = gr.Textbox(
+        label="Current Pretext",
+        interactive=False
+    )
+    
+    # Pretext buttons actions
+    code_pretext_btn.click(
+        fn=set_pretext, 
+        inputs=gr.State("You are an expert Python programmer. Provide detailed, professional code solutions."),
+        outputs=pretext_status
+    )
+    
+    professional_pretext_btn.click(
+        fn=set_pretext, 
+        inputs=gr.State("Please respond in a clear, concise, and professional manner."),
+        outputs=pretext_status
+    )
+    
+    creative_pretext_btn.click(
+        fn=set_pretext, 
+        inputs=gr.State("Respond with maximum creativity, using imaginative and inspiring language."),
+        outputs=pretext_status
+    )
+    
+    # Chat interface setup
+    msg.submit(
+        fn=async_process_chatbot, 
+        inputs=[msg, chatbot], 
+        outputs=[chatbot]
+    )
 
-# Modify the input to pass the pretext
-def handle_pretext_button(message, history, evt: gradio.SelectData):
-    pretext_map = {
-        "Act as a Python code expert": "You are an expert Python programmer. Provide detailed, professional code solutions.",
-        "Respond professionally": "Please respond in a clear, concise, and professional manner.",
-        "Be highly creative": "Respond with maximum creativity, using imaginative and inspiring language."
-    }
-    pretext = pretext_map[evt.value.replace("Pretext: ", "")]
-    return "", history, pretext
-
-# Add event listeners for the pretext buttons
-code_pretext_btn.click(
-    fn=handle_pretext_button, 
-    inputs=[scene.input_box, scene.chatbot], 
-    outputs=[scene.input_box, scene.chatbot, scene.input_box.pretext]
-)
-professional_pretext_btn.click(
-    fn=handle_pretext_button, 
-    inputs=[scene.input_box, scene.chatbot], 
-    outputs=[scene.input_box, scene.chatbot, scene.input_box.pretext]
-)
-creative_pretext_btn.click(
-    fn=handle_pretext_button, 
-    inputs=[scene.input_box, scene.chatbot], 
-    outputs=[scene.input_box, scene.chatbot, scene.input_box.pretext]
-)
-
-scene.launch(quiet = True)
+# Launch the interface
+scene.launch(quiet=True)
