@@ -1,7 +1,7 @@
 # LAB2: Fine-Tuning LLM
 
 This repository contains the work for **LAB2: Fine-Tuning LLM**, focusing on fine-tuning large language models (LLMs) and evaluating their performance. All related work is available in the included notebooks, and you can access the Hugging Face interface for testing the fine-tuned model at the following link:  
-[Hugging Face Space](https://huggingface.co/spaces/PierreJousselin/LAB_LLM)
+[Hugging Face Space](https://huggingface.co/spaces/PierreJousselin/LAB_LLM) <br />
 [Gradio in Google Colab](https://colab.research.google.com/drive/1OdHS-It5L6eRE0fIRWW6IcGvjgmIX2X9?usp=sharing)
 
 ## Evaluation Metrics
