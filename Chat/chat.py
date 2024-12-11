@@ -111,8 +111,14 @@ class StopOnTokens(StoppingCriteria):
     pass
 pass
 
+current_pretext = ''
+
+def set_pretext(pretext):
+    global current_pretext
+    current_pretext = pretext
+
 def async_process_chatbot(message, history):
-    message = message + "act like you're angry!"
+    message = message + current_pretext
     eos_token = tokenizer.eos_token
     stop_on_tokens = StopOnTokens([eos_token,])
     text_streamer  = TextIteratorStreamer(tokenizer, skip_prompt = True)
@@ -159,23 +165,52 @@ studio_theme = gradio.themes.Soft(
     primary_hue = "teal",
 )
 
-scene = gradio.ChatInterface(
-    async_process_chatbot,
-    chatbot = gradio.Chatbot(
-        height = 325,
-        label = "Unsloth Studio Chat",
-    ),
-    textbox = gradio.Textbox(
-        placeholder = "Message Unsloth Chat",
-        container = False,
-    ),
-    title = None,
-    theme = studio_theme,
-    examples = None,
-    cache_examples = False,
-    retry_btn = None,
-    undo_btn = "Remove Previous Message",
-    clear_btn = "Restart Entire Chat",
-)
+with gradio.Blocks(theme=studio_theme) as scene:
+    gradio.ChatInterface(
+        async_process_chatbot,
+        chatbot = gradio.Chatbot(
+            height = 325,
+            label = "Unsloth Studio Chat",
+        ),
+        textbox = gradio.Textbox(
+            placeholder = "Message Unsloth Chat",
+            container = False,
+        ),
+        title = None,
+        theme = studio_theme,
+        examples = None,
+        cache_examples = False,
+        retry_btn = None,
+        undo_btn = "Remove Previous Message",
+        clear_btn = "Restart Entire Chat",
+    )
+
+    with gradio.Row():
+        sad_pretext_btn = gradio.Button("Sad")
+        professional_pretext_btn = gradio.Button("Professional")
+        angry_pretext_btn = gradio.Button("Angry")
+
+    pretext_status = gradio.Textbox(
+        label="Current Mood",
+        interactive=False
+    )
+    # Pretext buttons actions
+    sad_pretext_btn.click(
+        fn=set_pretext("I need you to act sad when responding to the chat or instruction below /n"), 
+        inputs=gradio.State("Sad"),
+        outputs=pretext_status
+    )
+    
+    professional_pretext_btn.click(
+        fn=set_pretext("I need you to act professional when responding to the chat or instruction below /n"), 
+        inputs=gr.State("Professional"),
+        outputs=pretext_status
+    )
+    
+    angry_pretext_btn.click(
+        fn=set_pretext("I need you to act angry when responding to the chat or instruction below /n"), 
+        inputs=gradio.State("Angry"),
+        outputs=pretext_status
+    )
 
 scene.launch(quiet = True)
