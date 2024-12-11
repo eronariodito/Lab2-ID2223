@@ -207,8 +207,8 @@ with gradio.Blocks(theme=studio_theme) as scene:
     )
     # Pretext buttons actions
     sad_pretext_btn.click(
-        fn=set_pretext("I need you to act sad when responding to the chat or instruction below /n"), 
-        inputs=gradio.State(),
+        fn=set_pretext, 
+        inputs=gradio.State("I need you to act sad when responding to the chat or instruction below /n"),
         outputs=pretext_status
     )
     
