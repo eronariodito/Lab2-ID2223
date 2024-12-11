@@ -1,9 +1,25 @@
+# Unsloth Studio
+# Copyright (C) 2024-present the Unsloth AI team. All rights reserved.
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from IPython.display import clear_output
 import subprocess
 import os
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
-MODEL_NAME = "unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit"
+MODEL_NAME = "PierreJousselin/llamav2"
 
 print("Installing packages for 🦥 Unsloth Studio ... Please wait 5 minutes ...")
 
@@ -79,7 +95,9 @@ with redirect_stdout(io.StringIO()):
     FastLanguageModel.for_inference(model)
 pass
 clear_output()
-import gradio as gr
+
+import gradio
+gradio.strings.en["SHARE_LINK_DISPLAY"] = ""
 from transformers import TextIteratorStreamer, StoppingCriteria, StoppingCriteriaList
 from threading import Thread
 
@@ -93,22 +111,25 @@ class StopOnTokens(StoppingCriteria):
     pass
 pass
 
-# Global variable to store the current pretext
-current_pretext = ""
+current_pretext = ''
 
-def modify_message_with_pretext(message):
-    """
-    Prepend a pretext to the user's message
-    """
+def set_pretext(pretext):
     global current_pretext
-    if current_pretext:
-        return f"{current_pretext} {message}"
-    return message
+    current_pretext = pretext
+    
+    match pretext:
+        case "I need you to act professional when responding to the chat or instruction below /n":
+            return "Professional"
+        case "I need you to act sad when responding to the chat or instruction below /n":
+            return "Sad"
+        case "I need you to act angry when responding to the chat or instruction below /n":
+            return "Angry"
+        
+    return ""
 
 def async_process_chatbot(message, history):
-    # Modify message with pretext if exists
-    message = modify_message_with_pretext(message)
-    
+    global current_pretext
+    message = message + current_pretext
     eos_token = tokenizer.eos_token
     stop_on_tokens = StopOnTokens([eos_token,])
     text_streamer  = TextIteratorStreamer(tokenizer, skip_prompt = True)
@@ -151,67 +172,56 @@ def async_process_chatbot(message, history):
     pass
 pass
 
-studio_theme = gr.themes.Soft(
+studio_theme = gradio.themes.Soft(
     primary_hue = "teal",
 )
 
-# Pretext selection function
-def set_pretext(pretext):
-    global current_pretext
-    current_pretext = pretext
-    return f"Pretext set: {pretext}"
+with gradio.Blocks(theme=studio_theme) as scene:
+    gradio.ChatInterface(
+        async_process_chatbot,
+        chatbot = gradio.Chatbot(
+            height = 325,
+            label = "PierreJousselin/llamav2 Chat",
+        ),
+        textbox = gradio.Textbox(
+            placeholder = "Message Unsloth Chat",
+            container = False,
+        ),
+        title = None,
+        theme = studio_theme,
+        examples = None,
+        cache_examples = False,
+        retry_btn = None,
+        undo_btn = "Remove Previous Message",
+        clear_btn = "Restart Entire Chat",
+    )
 
-# Create the interface with more explicit components
-with gr.Blocks(theme=studio_theme) as scene:
-    # Chatbot component
-    chatbot = gr.Chatbot(
-        height = 325,
-        label = "Unsloth Studio Chat",
-    )
-    
-    # Textbox for input
-    msg = gr.Textbox(
-        placeholder = "Message Unsloth Chat",
-        container = False,
-    )
-    
-    # Buttons for different pretexts
-    with gr.Row():
-        code_pretext_btn = gr.Button("Pretext: Act as a Python code expert")
-        professional_pretext_btn = gr.Button("Pretext: Respond professionally")
-        creative_pretext_btn = gr.Button("Pretext: Be highly creative")
-    
-    # Status textbox to show current pretext
-    pretext_status = gr.Textbox(
-        label="Current Pretext",
+    with gradio.Row():
+        sad_pretext_btn = gradio.Button("Sad")
+        professional_pretext_btn = gradio.Button("Professional")
+        angry_pretext_btn = gradio.Button("Angry")
+
+    pretext_status = gradio.Textbox(
+        label="Current Mood",
         interactive=False
     )
-    
     # Pretext buttons actions
-    code_pretext_btn.click(
+    sad_pretext_btn.click(
         fn=set_pretext, 
-        inputs=gr.State("You are an expert Python programmer. Provide detailed, professional code solutions."),
+        inputs=gradio.State("I need you to act sad when responding to the chat or instruction below /n"),
         outputs=pretext_status
     )
     
     professional_pretext_btn.click(
         fn=set_pretext, 
-        inputs=gr.State("Please respond in a clear, concise, and professional manner."),
+        inputs=gradio.State("I need you to act professional when responding to the chat or instruction below /n"),
         outputs=pretext_status
     )
     
-    creative_pretext_btn.click(
+    angry_pretext_btn.click(
         fn=set_pretext, 
-        inputs=gr.State("Respond with maximum creativity, using imaginative and inspiring language."),
+        inputs=gradio.State("I need you to act angry when responding to the chat or instruction below /n"),
         outputs=pretext_status
-    )
-    
-    # Chat interface setup
-    msg.submit(
-        fn=async_process_chatbot, 
-        inputs=[msg, chatbot], 
-        outputs=[chatbot]
     )
 
-# Launch the interface
-scene.launch(quiet=True)
+scene.launch(quiet = True)
